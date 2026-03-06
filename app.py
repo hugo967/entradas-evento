@@ -34,6 +34,7 @@ def login():
     if session.get('logueado'):
         return redirect(url_for("panel"))
     
+    error = None
     if request.method == "POST":
         usuario = request.form.get("usuario")
         contraseña = request.form.get("contraseña")
@@ -42,17 +43,213 @@ def login():
             session['logueado'] = True
             return redirect(url_for("panel"))
         else:
-            session['logueado'] = False
-            error = "Usuario o contraseña incorrctos"
-            return render_template_string(login_html, eror=error)
+            error = "Usuario o contraseña incorrectos"
         
     login_html = """
-    <h2>Acceso administrador</h2>
-    <form method="Post">
-        Usuario: <input type="text" name="usuario"><br><br>
-        Contraseña: <input type="password" name="contraseña"><br><br>
-        <input type="submit" value="Entrar">
-    </form>
+    <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Administrador</title>
+    <!-- Bootstrap 5 para diseño responsive -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            animation: slideUp 0.5s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0 !important;
+            padding: 2rem;
+            border: none;
+            text-align: center;
+        }
+        
+        .card-header h2 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 2rem;
+        }
+        
+        .card-header i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .card-body {
+            padding: 2.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 0.8rem 1.2rem;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            outline: none;
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-top: 1rem;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-login i {
+            margin-right: 0.5rem;
+        }
+        
+        .alert-error {
+            background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .footer-links {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            margin: 0 1rem;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: #764ba2;
+        }
+        
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .card-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            .card-header i {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6 col-xl-5">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-lock"></i>
+                        <h2>Acceso Administrador</h2>
+                    </div>
+                    
+                    <div class="card-body">
+                        {% if error %}
+                        <div class="alert-error">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            {{ error }}
+                        </div>
+                        {% endif %}
+                        
+                        <form method="POST">
+                            <div class="mb-4">
+                                <label for="usuario" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Usuario
+                                </label>
+                                <input type="text" class="form-control" 
+                                       id="usuario" name="usuario" 
+                                       placeholder="Introduce tu usuario"
+                                       required>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="contraseña" class="form-label">
+                                    <i class="fas fa-key me-2"></i>Contraseña
+                                </label>
+                                <input type="password" class="form-control" 
+                                       id="contraseña" name="contraseña" 
+                                       placeholder="Introduce tu contraseña"
+                                       required>
+                            </div>
+                            
+                            <button type="submit" class="btn-login">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Entrar
+                            </button>
+                        </form>
+                        
+                        <div class="footer-links">
+                            <a href="/">
+                                <i class="fas fa-home me-1"></i>Volver al inicio
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
     """
     return render_template_string(login_html)
 
@@ -694,4 +891,3 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
