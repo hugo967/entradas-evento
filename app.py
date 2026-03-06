@@ -1,8 +1,13 @@
-from flask import Flask, request, render_template_string, jsonify
+from flask import Flask, request, render_template_string, jsonify, redirect, session, url_for
 import json
+from functools import wraps
 import os
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'clave_prueba')
+
+ADMIN_USER = os.environ.get('ADMIN_USER', 'ADMIN')
+ADMIN_PASS = os.environ.get('ADMIN_PASS', '1234')
 
 DATA_FILE = "entradas.json"
 
@@ -15,6 +20,44 @@ def cargar_entradas():
 def guardar_entradas(entradas):
     with open(DATA_FILE, "w") as f:
         json.dump(entradas, f)
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logueado'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if session.get('logueado'):
+        return redirect(url_for("panel"))
+    
+    if request.method == "POST":
+        usuario = request.form.get("usuario")
+        contraseña = request.form.get("contraseña")
+        
+        if usuario == ADMIN_USER and contraseña == ADMIN_PASS:
+            session['logueado'] = True
+            return redirect(url_for("panel"))
+        else:
+            return "Usuario o contraseña no validos"
+        
+    login_html = """
+    <h2>Acceso administrador</h2>
+    <form method="Post">
+        Usuario: <input type="text" name="usuario"><br><br>
+        Contraseña: <input type="password" name="contraseña"><br><br>
+        <input type="submit" value="Entrar">
+    </form>
+    """
+    return render_template_string(login_html)
+
+@app.route("/logout")
+def logout():
+    session.pop('logueado', None)
+    return redirect(url_for('login'))
 
 @app.route("/", methods=["GET", "POST"])
 def registrarte():
@@ -45,11 +88,13 @@ def registrarte():
     return render_template_string(formulario_html)
 
 @app.route("/panel")
+@login_required
 def panel():
     entradas = cargar_entradas()
     return render_template_string(panel_html, entradas=entradas)
 
 @app.route("/api/entradas")
+@login_required
 def api_entradas():
     return jsonify(cargar_entradas())
 
