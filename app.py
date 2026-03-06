@@ -42,7 +42,9 @@ def login():
             session['logueado'] = True
             return redirect(url_for("panel"))
         else:
-            return "Usuario o contraseña no validos"
+            session['logueado'] = False
+            error = "Usuario o contraseña incorrctos"
+            return render_template_string(login_html, eror=error)
         
     login_html = """
     <h2>Acceso administrador</h2>
@@ -692,3 +694,4 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
