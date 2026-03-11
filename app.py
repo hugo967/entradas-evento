@@ -1,6 +1,11 @@
-from flask import Flask, request, render_template_string, jsonify, redirect, session, url_for
+from flask import Flask, request, render_template_string, jsonify, redirect, session, url_for, send_file
 import json
+import qrcode
+import io
 from functools import wraps
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
 import os
 
 app = Flask(__name__)
@@ -20,6 +25,76 @@ def cargar_entradas():
 def guardar_entradas(entradas):
     with open(DATA_FILE, "w") as f:
         json.dump(entradas, f)
+
+def generar_entrada_pdf(nombre, apellido, numero):
+    # ============================================================
+    # PARTE 1: GENERAR EL CÓDIGO QR
+    # ============================================================
+    datos_qr = f"ENTRADA--{numero}"
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    
+    qr.add_data(datos_qr)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    
+    # ============================================================
+    # PARTE 2: CREAR EL PDF EN MEMORIA
+    # ============================================================
+    
+    buffer = io.BytesIO()
+    
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    ancho, alto = A4
+    
+    # ============================================================
+    # PARTE 3: DIBUJAR EL CONTENIDO DEL PDF
+    # ============================================================
+    
+    pdf.setFont("Helvetica-Bold", 24)
+    pdf.setFillColorRGB(0.4, 0.2, 0.6)
+    pdf.drawString(200, alto - 100, "ENTRADA AL EVENTO")
+    
+    pdf.setStrokeColorRGB(0.4, 0.2, 0.6)
+    pdf.setLineWidth(2)
+    pdf.line(50, alto - 120, 545, alto - 120)
+    
+    pdf.setFont("Helvetica-Bold", 48)
+    pdf.drawString(200, alto - 200, f"#{numero}")  # ← AÑADE ESTA LÍNEA
+    pdf.drawString(50, alto - 310, "Fecha: no la se")
+    
+    # ============================================================
+    # PARTE 4: INSERTAR EL QR
+    # ============================================================
+    
+    qr_buffer = io.BytesIO()
+    qr_img.save(qr_buffer, format='PNG')
+    qr_buffer.seek(0)
+    qr_reader = ImageReader(qr_buffer)
+    pdf.drawImage(qr_reader, 350, alto- 350, width=150, height=150)
+    
+    # ============================================================
+    # PARTE 5: PIE DE PÁGINA
+    # ============================================================
+    
+    pdf.setFont("Helvetica", 10)
+    pdf.setFillColorRGB(0.5, 0.5, 0.5)
+    pdf.drawString(50, 50, "Presenta este codigo QR en la puerta de acceso")
+    
+    # ============================================================
+    # PARTE 6: FINALIZAR
+    # ============================================================
+    
+    pdf.showPage()
+    pdf.save()
+    
+    buffer.seek(0)
+    
+    return buffer
 
 def login_required(f):
     @wraps(f)
@@ -278,12 +353,15 @@ def registrarte():
 
         entradas.append(nuevas_entradas)
         guardar_entradas(entradas)
-
-        return render_template_string(confirmacion_html, 
-                                    numero=numero, 
-                                    nombre=nombre, 
-                                    apellido=apellido)
-
+        
+        pdf_buffer = generar_entrada_pdf(nombre, apellido, numero)
+        
+        return send_file(
+            pdf_buffer,
+            as_attachment=True,
+            download_name=f"entrada_{numero}.pdf",
+            mimetype="application/pdf"
+        )
     return render_template_string(formulario_html)
 
 @app.route("/panel")
@@ -891,3 +969,4 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
