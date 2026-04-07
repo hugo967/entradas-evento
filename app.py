@@ -348,7 +348,8 @@ def registrarte():
         nuevas_entradas = {
             "numero": numero,
             "nombre": nombre,
-            "apellido": apellido
+            "apellido": apellido,
+            "usada": False
         }
 
         entradas.append(nuevas_entradas)
@@ -398,9 +399,14 @@ def validar():
                 break
         
         if encontrada:
-            resultado = f"✅ VÁLIDA: {encontrada['nombre']} {encontrada['apellido']} (Entrada #{encontrada['numero']})"
-            color_resultado = "success"
-            # Aquí podrías marcar como usada si añadieres ese campo
+            if encontrada.get("usada", False):
+                resultado = f"❌ NO VÁLIDA, YA UTILIZADA: {encontrada['nombre']} {encontrada['apellido']} (Entrada #{encontrada['numero']})"
+                color_resultado = "danger"
+            else:
+                encontrada["usada"] = True
+                guardar_entradas(entradas)
+                resultado =  f"✅ VÁLIDA: {encontrada['nombre']} {encontrada['apellido']} (Entrada #{encontrada['numero']})"
+                color_resultado = "success"
         else:
             resultado = f"❌ NO VÁLIDA: No existe entrada con número {numero}"
             color_resultado = "danger"
