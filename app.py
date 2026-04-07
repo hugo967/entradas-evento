@@ -100,13 +100,16 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('logueado'):
-            return redirect(url_for('login'))
+            return redirect(url_for('login', next=request.url))
         return f(*args, **kwargs)
     return decorated_function
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if session.get('logueado'):
+        next_page = request.args.get("next")
+        if next_page:
+            return redirect(next_page)
         return redirect(url_for("panel"))
     
     error = None
