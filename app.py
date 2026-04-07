@@ -107,23 +107,29 @@ def login_required(f):
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if session.get('logueado'):
-        next_page = request.args.get("next")
+        next_page = request.args.get('next') or request.form.get('next')
         if next_page:
             return redirect(next_page)
+        return redirect(url_for("panel"))
     
     error = None
+    next_page = request.args.get("next", "")
+    
     if request.method == "POST":
-        usuario = request.form.get("usuario")
-        contraseña = request.form.get("contraseña")
+        usuario = request.form.get("usuario")        # ← ¡ESTAS LÍNEAS SON IMPORTANTES!
+        contraseña = request.form.get("contraseña")  # ← ¡ESTAS LÍNEAS SON IMPORTANTES!
         
         if usuario == ADMIN_USER and contraseña == ADMIN_PASS:
             session['logueado'] = True
+            next_page = request.form.get('next') or request.args.get('next')
+            if next_page:
+                return redirect(next_page)
             return redirect(url_for("panel"))
         else:
             error = "Usuario o contraseña incorrectos"
         
     login_html = """
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -289,6 +295,7 @@ def login():
                         {% endif %}
                         
                         <form method="POST">
+                            <input type="hidden" name="next" value="{{ next_page }}">
                             <div class="mb-4">
                                 <label for="usuario" class="form-label">
                                     <i class="fas fa-user me-2"></i>Usuario
@@ -327,8 +334,8 @@ def login():
     </div>
 </body>
 </html>
-    """
-    return render_template_string(login_html)
+"""
+    return render_template_string(login_html, next_page=next_page, error=error)
 
 @app.route("/logout")
 def logout():
