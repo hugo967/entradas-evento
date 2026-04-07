@@ -387,7 +387,7 @@ def validar():
     
     if request.method == "POST":
         qr_texto = request.form.get("qr")  # "ENTRADA-042" o lo que escaneen
-        numero = qr_texto.replace("ENTRADA-", "").strip()  # Extrae "042"
+        numero = qr_texto.replace("ENTRADA--", "").strip()  # Extrae "042"
         
         # Buscar en entradas.json
         entradas = cargar_entradas()
